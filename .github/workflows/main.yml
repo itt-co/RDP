@@ -7,9 +7,9 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Download playit.exe
+    - name: Download playit agent
       run: |
-        Invoke-WebRequest https://cdn.playit.gg/latest/windows/playit.exe -OutFile playit.exe
+        Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile playit.exe
 
     - name: Decode playit.toml
       run: |
@@ -25,5 +25,5 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Keep the tunnel open (wait)
+    - name: Keep tunnel alive
       run: Start-Sleep -Seconds 3600
