@@ -1,29 +1,30 @@
-name: RDP via playit
-
-on:
-  workflow_dispatch:
-
+name: CI
+on: [workflow_dispatch]
 jobs:
-  rdp_tunnel:
+  build:
     runs-on: windows-latest
-
     steps:
     - name: Download playit agent
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile playit.exe
+      run: Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile playit.exe
 
-    - name: Decode playit.toml config
+    - name: Write playit config file
       run: |
         $base64 = "${{ secrets.PLAYIT_CONFIG_BASE64 }}"
         [System.IO.File]::WriteAllBytes("playit.toml", [Convert]::FromBase64String($base64))
 
-    - name: Start playit agent
-      run: Start-Process -FilePath ".\playit.exe" -NoNewWindow
-
-    - name: Enable RDP and Firewall
+    - name: Enable Remote Desktop
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
 
-    - name: Keep the tunnel alive for 1 hour
+    - name: Create local user runneradmin and set password
+      run: |
+        net user runneradmin P@ssw0rd! /add
+        net localgroup "Remote Desktop Users" runneradmin /add
+
+    - name: Start playit agent to create tunnel
+      run: Start-Process -FilePath ".\playit.exe" -NoNewWindow
+
+    - name: Keep tunnel alive for 1 hour
       run: Start-Sleep -Seconds 3600
