@@ -1,6 +1,7 @@
 name: RDP via playit
 
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
 
 jobs:
   rdp_tunnel:
@@ -11,19 +12,18 @@ jobs:
       run: |
         Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile playit.exe
 
-    - name: Decode playit.toml
+    - name: Decode playit.toml config
       run: |
         $base64 = "${{ secrets.PLAYIT_CONFIG_BASE64 }}"
         [System.IO.File]::WriteAllBytes("playit.toml", [Convert]::FromBase64String($base64))
 
     - name: Start playit agent
-      run: |
-        Start-Process -FilePath ".\playit.exe" -ArgumentList "agent run" -NoNewWindow
+      run: Start-Process -FilePath ".\playit.exe" -NoNewWindow
 
     - name: Enable RDP and Firewall
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Keep tunnel alive
+    - name: Keep the tunnel alive for 1 hour
       run: Start-Sleep -Seconds 3600
