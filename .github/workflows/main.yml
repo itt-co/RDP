@@ -1,23 +1,33 @@
-name: CI
-on: [workflow_dispatch]
+name: RDP via Playit
+
+on:
+  workflow_dispatch:
+
 jobs:
-  build:
+  run-playit-agent:
     runs-on: windows-latest
     steps:
-    - name: Download playit agent
-      run: |
-        Invoke-WebRequest https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe -OutFile playit.exe
-    - name: Write playit.toml
-      run: |
-        $base64 = "${{ secrets.PLAYIT_TOML_BASE64 }}"
-        [System.IO.File]::WriteAllBytes("playit.toml", [Convert]::FromBase64String($base64))
-    - name: Start playit agent
-      run: Start-Process -FilePath ".\playit.exe" -ArgumentList "start" -NoNewWindow
-    - name: Enable RDP
-      run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
-    - name: Keep workflow alive
-      run: Start-Sleep -Seconds 3600
+      - name: Download playit agent
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile playit.exe
+
+      - name: إعداد ملف playit.toml (تعديل السر الخاص بك)
+        run: |
+          $content = @"
+          secret_key = "${{ secrets.PLAYIT_SECRET_KEY }}"
+          "@
+          $content | Out-File -FilePath playit.toml -Encoding ascii
+
+      - name: تشغيل الـ agent
+        run: |
+          Start-Process -FilePath ".\playit.exe" -ArgumentList "start" -NoNewWindow
+
+      - name: تفعيل RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+
+      - name: إبقاء الـ workflow شغال 1 ساعة
+        run: Start-Sleep -Seconds 3600
