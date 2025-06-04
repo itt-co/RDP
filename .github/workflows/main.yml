@@ -24,7 +24,7 @@ jobs:
         net localgroup "Remote Desktop Users" runneradmin /add
 
     - name: Start playit agent to create tunnel
-      run: Start-Process -FilePath ".\playit.exe" -NoNewWindow
+      run: Start-Process -FilePath ".\playit.exe" -ArgumentList "agent run" -NoNewWindow
 
     - name: Keep tunnel alive for 1 hour
       run: Start-Sleep -Seconds 3600
